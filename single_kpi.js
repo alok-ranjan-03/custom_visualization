@@ -100,6 +100,52 @@ looker.plugins.visualizations.add({
       default: 20
     },
 
+    // NEW: arrow symbols, arrow colors, and labels for pos/neg
+    arrow_positive_symbol: {
+      section: "Comparison",
+      order: 5,
+      type: "string",
+      label: "Positive Arrow Symbol",
+      default: "▲"
+    },
+    arrow_negative_symbol: {
+      section: "Comparison",
+      order: 6,
+      type: "string",
+      label: "Negative Arrow Symbol",
+      default: "▼"
+    },
+    arrow_positive_color: {
+      section: "Comparison",
+      order: 7,
+      type: "string",
+      label: "Positive Arrow Color",
+      display: "color",
+      default: "#34a853"
+    },
+    arrow_negative_color: {
+      section: "Comparison",
+      order: 8,
+      type: "string",
+      label: "Negative Arrow Color",
+      display: "color",
+      default: "#ea4335"
+    },
+    comparison_positive_text: {
+      section: "Comparison",
+      order: 9,
+      type: "string",
+      label: "Positive Comparison Title",
+      default: "Up"
+    },
+    comparison_negative_text: {
+      section: "Comparison",
+      order: 10,
+      type: "string",
+      label: "Negative Comparison Title",
+      default: "Down"
+    },
+
     // ----- FORMAT SECTION -----
     prefix: {
       section: "Format",
@@ -212,19 +258,28 @@ looker.plugins.visualizations.add({
     if (config.comparison_mode !== "none" && previousValue !== null) {
       let diff = currentValue - previousValue;
       let pct = previousValue !== 0 ? (diff / previousValue) * 100 : 0;
-      let arrow = diff >= 0 ? "▲" : "▼";
-      let comparisonText = "";
-      let comparisonColor = diff >= 0 ? config.comparison_positive_color : config.comparison_negative_color;
 
+      const isPositive = diff >= 0;
+      const arrowSymbol = isPositive ? (config.arrow_positive_symbol || "▲") : (config.arrow_negative_symbol || "▼");
+      const arrowColor = isPositive ? (config.arrow_positive_color || config.comparison_positive_color) : (config.arrow_negative_color || config.comparison_negative_color);
+      const comparisonLabel = isPositive ? (config.comparison_positive_text || "") : (config.comparison_negative_text || "");
+      const comparisonColor = isPositive ? config.comparison_positive_color : config.comparison_negative_color;
+
+      let valuePart = "";
       if (config.comparison_mode === "absolute") {
-        comparisonText = `${arrow} ${diff.toFixed(2)}`;
+        valuePart = `${Math.abs(diff).toFixed(2)}`;
       } else if (config.comparison_mode === "percent") {
-        comparisonText = `${arrow} ${pct.toFixed(1)}%`;
+        valuePart = `${Math.abs(pct).toFixed(1)}%`;
       }
 
       comparisonEl.style.fontSize = `${config.comparison_font_size}px`;
-      comparisonEl.style.color = comparisonColor;
-      comparisonEl.innerText = comparisonText;
+      // build HTML so arrow has its own color and label can differ
+      comparisonEl.innerHTML = `
+        <span class="kpi-arrow" style="color: ${arrowColor}; font-weight:700; margin-right:6px;">${arrowSymbol}</span>
+        <span class="kpi-compare-text" style="color: ${comparisonColor}; font-weight:500;">
+          ${comparisonLabel} ${valuePart}
+        </span>
+      `;
     } else {
       comparisonEl.innerText = "";
     }
